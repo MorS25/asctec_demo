@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="frame" default="/vicon/hummingbird/hummingbird" />
+  <arg name="joy_dev" default="/dev/input/js0" />
+  <arg name="x" default="0" />
+  <arg name="y" default="0" />
+  <arg name="z" default="0.5" />
+
+  <node name="joy" pkg="joy" type="joy_node" output="screen">
+    <param name="dev" value="$(arg joy_dev)" />
+  </node>
+
+  <node name="pose" pkg="asctec_demo" type="joystick.py" output="screen">
+    <param name="name" value="goal" />
+    <param name="rate" value="10" />
+    <param name="x" value="$(arg x)" />
+    <param name="y" value="$(arg y)" />
+    <param name="z" value="$(arg z)" />
+  </node>
+
+  <node name="message_converter" pkg="asctec_demo" type="message_converter.py" output="screen">
+    <param name="poseStamped_listener_name" value="goal" />
+    <param name="mav_publisher_name" value="fcu/control" />
+  </node>
+
+  <node name="fcu" pkg="asctec_hl_interface" type="hl_node" output="screen" clear_params="true">
+     <rosparam file="$(find asctec_hl_interface)/launch/fcu_parameters.yaml" />
+     <rosparam file="$(find asctec_hl_interface)/launch/ssdk_parameters.yaml" />
+  </node>
+
+  <node pkg="tf" type="static_transform_publisher" name="baselink_broadcaster" args="0 0 0 0 0 0 1 $(arg frame) /hummingbird/base_link 100" />
+
+  <node pkg="tf" type="static_transform_publisher" name="rotor0_broadcaster" args="0.17 0 0.01 0 0 0 1 /hummingbird/base_link /hummingbird/rotor_0 100" />
+
+ <node pkg="tf" type="static_transform_publisher" name="rotor1_broadcaster" args="-0.17 0 0.01 0 0 0 1 /hummingbird/base_link /hummingbird/rotor_1 100" />
+
+ <node pkg="tf" type="static_transform_publisher" name="rotor2_broadcaster" args="0 0.17 0.01 0 0 0 1 /hummingbird/base_link /hummingbird/rotor_2 100" />
+
+ <node pkg="tf" type="static_transform_publisher" name="rotor3_broadcaster" args="0 -0.17 0.01 0 0 0 1 /hummingbird/base_link /hummingbird/rotor_3 100" />
+
+ <node pkg="tf" type="static_transform_publisher" name="baselink_inertia_broadcaster" args="0 0 0 0 0 0 1 /hummingbird/base_link /hummingbird/base_link_inertia 100" />
+
+  <!-- run vicon bridge -->
+  <include file="$(find vicon_bridge)/launch/vicon.launch"/>
+
+  <!-- run rviz -->
+  <param name="robot_description" command="$(find xacro)/xacro.py $(find rotors_description)/urdf/hummingbird.xacro"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find asctec_demo)/launch/test.rviz"/>
+
+
+</launch>
